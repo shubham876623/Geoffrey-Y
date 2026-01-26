@@ -261,3 +261,52 @@ CREATE POLICY "Allow all operations on menu_imports" ON menu_imports
   FOR ALL USING (true);
 
 
+-- Create menu_imports table if it doesn't exist
+-- Run this in your Supabase SQL editor
+
+-- Menu Imports table
+-- Tracks menu upload/import history
+CREATE TABLE IF NOT EXISTS menu_imports (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  restaurant_id UUID REFERENCES restaurants(id) ON DELETE CASCADE NOT NULL,
+  file_name TEXT NOT NULL,
+  file_type TEXT NOT NULL,  -- 'pdf', 'image', 'csv', 'text'
+  status TEXT NOT NULL,  -- 'pending', 'processing', 'completed', 'failed'
+  parsed_data JSONB,  -- Stores parsed menu data before confirmation
+  error_message TEXT,
+  created_at TIMESTAMP DEFAULT NOW(),
+  completed_at TIMESTAMP
+);
+
+-- Indexes for menu_imports
+CREATE INDEX IF NOT EXISTS idx_menu_imports_restaurant_id ON menu_imports(restaurant_id);
+CREATE INDEX IF NOT EXISTS idx_menu_imports_status ON menu_imports(restaurant_id, status);
+CREATE INDEX IF NOT EXISTS idx_menu_imports_created_at ON menu_imports(restaurant_id, created_at DESC);
+
+
+-- Enable Row Level Security for menu_imports
+ALTER TABLE menu_imports ENABLE ROW LEVEL SECURITY;
+
+-- Drop existing policy if it exists (to avoid conflicts)
+DROP POLICY IF EXISTS "Allow all operations on menu_imports" ON menu_imports;
+
+-- RLS Policy for menu_imports (allow all for now, can be restricted later)
+CREATE POLICY "Allow all operations on menu_imports" ON menu_imports
+  FOR ALL USING (true);
+-- Add order_source and customer_session_id columns to orders table
+-- Run this in Supabase SQL Editor if columns don't exist yet
+
+-- Add order_source column to orders table (if not exists)
+-- This column tracks whether order came from voice or self-service
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_source TEXT DEFAULT 'voice';
+
+-- Add customer_session_id column (optional: for tracking customer sessions)
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_session_id TEXT;
+
+-- Add modifier_selections and Chinese translations to order_items table (if not exists)
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS modifier_selections JSONB;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS size_chinese TEXT;
+ALTER TABLE order_items ADD COLUMN IF NOT EXISTS special_instructions_chinese TEXT;
+
+-- Add index for order_source (for filtering orders by source)
+CREATE INDEX IF NOT EXISTS idx_orders_order_source ON orders(restaurant_id, order_source);

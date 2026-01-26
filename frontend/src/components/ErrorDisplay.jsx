@@ -13,6 +13,9 @@ const ErrorDisplay = ({ title, message, details }) => {
           <p className="text-gray-300 text-lg">{message}</p>
           
           {details && (
+
+
+
             <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
               <p className="text-gray-400 text-sm font-mono whitespace-pre-wrap">{details}</p>
             </div>

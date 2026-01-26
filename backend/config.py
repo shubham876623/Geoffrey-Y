@@ -28,6 +28,7 @@ class Config:
     # API Security
     KDS_API_KEY = os.getenv("KDS_API_KEY")
     ONBOARDING_API_KEY = os.getenv("ONBOARDING_API_KEY")
+    JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
     
     # Webhook Security (optional)
     WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")

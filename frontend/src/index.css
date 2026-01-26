@@ -2,8 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Chinese Restaurant Animations */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(5deg);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  animation: shimmer 2s infinite;
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
 :root {
-  font-family: 'Inter', 'Poppins', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  font-family: 'Outfit', 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   line-height: 1.6;
   font-weight: 400;
   
@@ -279,7 +321,28 @@ body {
 
 /* Premium Typography */
 .text-premium {
-  font-family: 'Poppins', sans-serif;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+/* Elegant Heading Font */
+.font-heading {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Modern Body Font */
+.font-body {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+}
+
+/* Premium Display Font */
+.font-display {
+  font-family: 'Space Grotesk', sans-serif;
   font-weight: 600;
   letter-spacing: -0.02em;
 }
@@ -383,4 +446,49 @@ body {
 
 .compact-card .rounded-2xl {
   border-radius: 0.75rem !important;
+}
+
+/* Hide scrollbar for category tabs */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Smooth scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Ensure consistent card heights in grid */
+.grid > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.grid > div > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* Better scrollbar styling for order items */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: linear-gradient(to bottom, #a855f7, #ec4899, #f59e0b);
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(to bottom, #9333ea, #db2777, #d97706);
 }
