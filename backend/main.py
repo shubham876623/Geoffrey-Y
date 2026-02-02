@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from config import Config
-from routes import webhook, restaurants, orders, menu, auth
+import os
+from routes import webhook, restaurants, orders, menu, auth, analytics
 # landing removed - frontend handles landing page
 from utils.logger import setup_logger
 
@@ -34,6 +36,12 @@ app.include_router(restaurants.router)
 app.include_router(orders.router)
 app.include_router(menu.router)
 app.include_router(auth.router)
+app.include_router(analytics.router)
+
+# Serve uploaded images
+uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+if os.path.exists(uploads_dir):
+    app.mount("/uploads", StaticFiles(directory=uploads_dir), name="uploads")
 # Landing page routes removed - frontend handles /admin-dashboard
 
 @app.get("/api")

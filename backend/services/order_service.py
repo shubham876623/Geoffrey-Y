@@ -423,7 +423,7 @@ def update_order_status(order_id: str, new_status: str, changed_by: str = "kds")
     supabase = get_supabase_client()
     
     # Valid statuses
-    valid_statuses = ["pending", "preparing", "ready", "completed"]
+    valid_statuses = ["pending", "preparing", "ready", "completed", "cancelled"]
     if new_status not in valid_statuses:
         raise ValueError(f"Invalid status: {new_status}. Must be one of: {valid_statuses}")
     
@@ -468,6 +468,73 @@ def update_order_status(order_id: str, new_status: str, changed_by: str = "kds")
     return updated_order
 
 
+def cancel_order(order_id: str, cancellation_reason: Optional[str] = None, cancelled_by: str = "admin") -> Dict:
+    """
+    Cancel an order
+    Business rules:
+    - Can only cancel orders that are not already completed or cancelled
+    - Logs cancellation reason
+    - Sends cancellation SMS to customer
+    - Returns cancelled order
+    """
+    supabase = get_supabase_client()
+    
+    # Get current order
+    order = get_order_by_id(order_id)
+    if not order:
+        raise Exception(f"Order {order_id} not found")
+    
+    current_status = order.get("status")
+    
+    # Business rule: Cannot cancel already completed or cancelled orders
+    if current_status == "completed":
+        raise ValueError("Cannot cancel a completed order")
+    
+    if current_status == "cancelled":
+        raise ValueError("Order is already cancelled")
+    
+    # Update order status to cancelled
+    update_data = {
+        "status": "cancelled",
+        "updated_at": get_current_timestamp().isoformat()
+    }
+    
+    # Add cancellation reason if provided (store in special_instructions or add new field)
+    # For now, we'll append to special_instructions
+    if cancellation_reason:
+        existing_instructions = order.get("special_instructions", "") or ""
+        cancellation_note = f"[CANCELLED: {cancellation_reason}]"
+        if existing_instructions:
+            update_data["special_instructions"] = f"{existing_instructions}\n{cancellation_note}"
+        else:
+            update_data["special_instructions"] = cancellation_note
+    
+    result = supabase.table("orders").update(update_data).eq("id", order_id).execute()
+    
+    if not result.data:
+        raise Exception("Failed to cancel order")
+    
+    # Log status change
+    log_status_change(order_id, "cancelled", cancelled_by)
+    
+    logger.info(f"Order {order.get('order_number')} cancelled by {cancelled_by}. Reason: {cancellation_reason or 'Not provided'}")
+    
+    # Get updated order
+    cancelled_order = get_order_by_id(order_id)
+    
+    # Send cancellation SMS to customer (non-blocking)
+    try:
+        from services.sms_service import send_order_cancellation_sms
+        sms_result = send_order_cancellation_sms(cancelled_order, cancellation_reason)
+        if sms_result.get("success"):
+            logger.info(f"Cancellation SMS sent for order {order.get('order_number')}")
+        else:
+            logger.warning(f"Cancellation SMS failed for order {order.get('order_number')}: {sms_result.get('error')}")
+    except Exception as e:
+        # Don't fail cancellation if SMS fails
+        logger.error(f"Error sending cancellation SMS for order {order.get('order_number')}: {e}")
+    
+    return cancelled_order
 
 
 def get_order_by_id(order_id: str) -> Optional[Dict]:

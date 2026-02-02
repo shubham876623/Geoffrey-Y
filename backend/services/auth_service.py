@@ -126,6 +126,20 @@ async def create_user(
     Returns created user data
     """
     try:
+        import re
+        
+        # Validate UUID format for restaurant_id if provided
+        if restaurant_id:
+            uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+            if not re.match(uuid_pattern, restaurant_id, re.IGNORECASE):
+                raise ValueError(f"Invalid restaurant_id format. Expected UUID format (e.g., '123e4567-e89b-12d3-a456-426614174000'), got: '{restaurant_id}'")
+        
+        # Validate UUID format for created_by if provided
+        if created_by:
+            uuid_pattern = r'^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+            if not re.match(uuid_pattern, created_by, re.IGNORECASE):
+                raise ValueError(f"Invalid created_by format. Expected UUID format, got: '{created_by}'")
+        
         supabase = get_supabase_client()
         
         # Hash password
@@ -154,6 +168,11 @@ async def create_user(
         
         # Link to restaurant if restaurant_id provided and not super_admin
         if restaurant_id and role != "super_admin":
+            # Verify restaurant exists
+            restaurant_check = supabase.table("restaurants").select("id").eq("id", restaurant_id).execute()
+            if not restaurant_check.data or len(restaurant_check.data) == 0:
+                raise ValueError(f"Restaurant with ID '{restaurant_id}' not found. Please check the restaurant ID.")
+            
             supabase.table("restaurant_users").insert({
                 "user_id": user_id,
                 "restaurant_id": restaurant_id,
@@ -277,12 +296,24 @@ async def deactivate_user(user_id: str) -> bool:
 
 
 async def delete_user(user_id: str) -> bool:
-    """Delete a user account"""
+    """
+    Delete a user account
+    Handles foreign key constraints by updating created_by references
+    """
     try:
         supabase = get_supabase_client()
+        
+        # First, update all users that were created by this user
+        # Set their created_by to NULL to break the foreign key constraint
+        supabase.table("users").update({"created_by": None}).eq("created_by", user_id).execute()
+        
+        # Also update restaurant_users table if this user created any restaurant user assignments
+        supabase.table("restaurant_users").update({"created_by": None}).eq("created_by", user_id).execute()
+        
+        # Now delete the user
         supabase.table("users").delete().eq("id", user_id).execute()
         
         return True
     except Exception as e:
         logger.error(f"Error deleting user: {e}")
-        return False
+        raise  # Re-raise to get proper error handling

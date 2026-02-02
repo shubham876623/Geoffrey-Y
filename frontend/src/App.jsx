@@ -10,6 +10,7 @@ import RestaurantLogin from './pages/RestaurantLogin'
 import StaffLogin from './pages/StaffLogin'
 import AdminDashboard from './pages/AdminDashboard'
 import RestaurantDashboard from './pages/RestaurantDashboard'
+import Analytics from './pages/Analytics'
 import AdminDashboardLanding from './pages/AdminDashboardLanding'
 import ProtectedRoute from './components/ProtectedRoute'
 import RestaurantRedirect from './components/RestaurantRedirect'
@@ -61,6 +62,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={['restaurant_admin']}>
             <RestaurantDashboard />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/restaurant/analytics" 
+        element={
+          <ProtectedRoute allowedRoles={['restaurant_admin']}>
+            <Analytics />
           </ProtectedRoute>
         } 
       />

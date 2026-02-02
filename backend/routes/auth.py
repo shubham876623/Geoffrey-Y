@@ -508,7 +508,21 @@ async def create_user_endpoint(
             role=user["role"],
             is_active=True
         )
+    except ValueError as e:
+        # UUID validation or restaurant not found errors
+        logger.error(f"Validation error creating user: {e}")
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException:
+        raise
     except Exception as e:
+        error_msg = str(e)
+        # Check for UUID format errors from database
+        if "invalid input syntax for type uuid" in error_msg.lower() or "22P02" in error_msg:
+            logger.error(f"Invalid UUID format error: {e}")
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid restaurant ID format. Please provide a valid UUID (e.g., '123e4567-e89b-12d3-a456-426614174000')."
+            )
         logger.error(f"Error creating user: {e}")
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -684,9 +698,21 @@ async def delete_user_endpoint(
         if result.data[0]["restaurant_id"] != admin_result.data[0]["restaurant_id"]:
             raise HTTPException(status_code=403, detail="Insufficient permissions")
     
-    success = await delete_user(user_id)
-    
-    if not success:
-        raise HTTPException(status_code=500, detail="Failed to delete user")
-    
-    return {"message": "User deleted successfully"}
+    try:
+        success = await delete_user(user_id)
+        
+        if not success:
+            raise HTTPException(status_code=500, detail="Failed to delete user")
+        
+        return {"message": "User deleted successfully"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Check if it's a foreign key constraint error
+        error_msg = str(e)
+        if "foreign key constraint" in error_msg.lower() or "23503" in error_msg:
+            raise HTTPException(
+                status_code=409,
+                detail="Cannot delete user: This user has created other users. Please reassign those users first or use deactivate instead."
+            )
+        raise HTTPException(status_code=500, detail=f"Failed to delete user: {str(e)}")

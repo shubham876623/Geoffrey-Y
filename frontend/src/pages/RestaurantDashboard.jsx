@@ -21,7 +21,8 @@ import {
   updateUserPassword,
   deactivateUser,
   deleteUser,
-  getOrders
+  getOrders,
+  uploadMenuItemImage
 } from '../lib/api'
 import {
   FiCoffee,
@@ -39,10 +40,12 @@ import {
   FiFileText,
   FiShoppingBag,
   FiBarChart,
+  FiTrendingUp,
   FiKey,
   FiUserX,
   FiToggleLeft,
-  FiToggleRight
+  FiToggleRight,
+  FiRefreshCw
 } from 'react-icons/fi'
 import { ToastContainer } from '../components/Toast'
 
@@ -117,6 +120,9 @@ export default function RestaurantDashboard() {
   const [newPassword, setNewPassword] = useState('')
   const [uploadFile, setUploadFile] = useState(null)
   const [uploadProgress, setUploadProgress] = useState(null)
+  const [itemImageFile, setItemImageFile] = useState(null)
+  const [itemImagePreview, setItemImagePreview] = useState(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
 
   useEffect(() => {
     // Wait for user to load
@@ -219,8 +225,25 @@ export default function RestaurantDashboard() {
   const handleCreateItem = async (e) => {
     e.preventDefault()
     try {
-      await createMenuItem(restaurantId, { ...itemForm, price: parseFloat(itemForm.price) })
-      showToast('Menu item created successfully!', 'success')
+      // First create the item
+      const response = await createMenuItem(restaurantId, { ...itemForm, price: parseFloat(itemForm.price) })
+      const createdItem = response.item
+      
+      // If image file is selected, upload it
+      if (itemImageFile && createdItem?.id) {
+        setUploadingImage(true)
+        try {
+          const uploadResponse = await uploadMenuItemImage(restaurantId, createdItem.id, itemImageFile)
+          showToast('Menu item created with image successfully!', 'success')
+        } catch (uploadError) {
+          showToast('Menu item created but image upload failed. You can upload image later.', 'warning')
+        } finally {
+          setUploadingImage(false)
+        }
+      } else {
+        showToast('Menu item created successfully!', 'success')
+      }
+      
       setShowItemForm(false)
       setItemForm({
         name: '',
@@ -233,6 +256,8 @@ export default function RestaurantDashboard() {
         is_available: true,
         display_order: 0
       })
+      setItemImageFile(null)
+      setItemImagePreview(null)
       loadData()
     } catch (error) {
       showToast(error.response?.data?.detail || 'Failed to create menu item', 'error')
@@ -243,10 +268,29 @@ export default function RestaurantDashboard() {
     e.preventDefault()
     if (!selectedItem) return
     try {
+      // First update the item
       await updateMenuItem(selectedItem.id, { ...itemForm, price: itemForm.price ? parseFloat(itemForm.price) : undefined })
-      showToast('Menu item updated successfully!', 'success')
+      
+      // If image file is selected, upload it
+      if (itemImageFile) {
+        setUploadingImage(true)
+        try {
+          const uploadResponse = await uploadMenuItemImage(restaurantId, selectedItem.id, itemImageFile)
+          showToast('Menu item updated with image successfully!', 'success')
+          setItemForm({...itemForm, image_url: uploadResponse.image_url})
+        } catch (uploadError) {
+          showToast('Menu item updated but image upload failed. You can try uploading again.', 'warning')
+        } finally {
+          setUploadingImage(false)
+        }
+      } else {
+        showToast('Menu item updated successfully!', 'success')
+      }
+      
       setShowItemForm(false)
       setSelectedItem(null)
+      setItemImageFile(null)
+      setItemImagePreview(null)
       loadData()
     } catch (error) {
       showToast(error.response?.data?.detail || 'Failed to update menu item', 'error')
@@ -482,6 +526,13 @@ export default function RestaurantDashboard() {
               <FiShoppingBag className="w-4 h-4" />
               Orders ({stats.activeOrders})
             </div>
+          </button>
+          <button
+            onClick={() => navigate('/restaurant/analytics')}
+            className="px-6 py-2 rounded-lg font-semibold transition-colors text-amber-200 hover:bg-amber-800/50 flex items-center gap-2"
+          >
+            <FiTrendingUp className="w-4 h-4" />
+            Analytics
           </button>
         </div>
 
@@ -1072,13 +1123,81 @@ export default function RestaurantDashboard() {
                 </div>
               </div>
               <div>
-                <label className="block text-amber-200 text-sm font-semibold mb-2">Image URL (Optional)</label>
-                <input
-                  type="url"
-                  value={itemForm.image_url}
-                  onChange={(e) => setItemForm({...itemForm, image_url: e.target.value})}
-                  className="w-full px-4 py-2 bg-amber-800/50 border border-orange-700/50 rounded-lg text-white placeholder-amber-400 focus:outline-none focus:border-orange-500"
-                />
+                <label className="block text-amber-200 text-sm font-semibold mb-2">Item Image (Optional)</label>
+                <div className="space-y-3">
+                  {/* Image Preview */}
+                  {(itemImagePreview || itemForm.image_url) && (
+                    <div className="relative w-full h-48 bg-amber-800/30 rounded-lg overflow-hidden border border-orange-700/50">
+                      <img
+                        src={itemImagePreview || itemForm.image_url}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setItemImagePreview(null)
+                          setItemImageFile(null)
+                          setItemForm({...itemForm, image_url: ''})
+                        }}
+                        className="absolute top-2 right-2 bg-red-600 hover:bg-red-500 text-white rounded-full p-2 transition-colors"
+                        title="Remove image"
+                      >
+                        <FiX className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+                  
+                  {/* File Upload Input */}
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0]
+                        if (file) {
+                          // Validate file size (5MB max)
+                          if (file.size > 5 * 1024 * 1024) {
+                            showToast('Image size must be less than 5MB', 'error')
+                            return
+                          }
+                          setItemImageFile(file)
+                          // Create preview
+                          const reader = new FileReader()
+                          reader.onloadend = () => {
+                            setItemImagePreview(reader.result)
+                          }
+                          reader.readAsDataURL(file)
+                        }
+                      }}
+                      className="w-full px-4 py-2 bg-amber-800/50 border border-orange-700/50 rounded-lg text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-orange-600 file:text-white hover:file:bg-orange-500 focus:outline-none focus:border-orange-500"
+                    />
+                    <p className="text-amber-300 text-xs mt-1">Max file size: 5MB. Supported: JPG, PNG, WebP, GIF</p>
+                  </div>
+                  
+                  {/* Or use URL option */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-orange-700/50"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="px-2 bg-amber-900/50 text-amber-300">OR</span>
+                    </div>
+                  </div>
+                  
+                  <input
+                    type="url"
+                    value={itemForm.image_url}
+                    onChange={(e) => {
+                      setItemForm({...itemForm, image_url: e.target.value})
+                      if (e.target.value) {
+                        setItemImagePreview(e.target.value)
+                      }
+                    }}
+                    placeholder="Enter image URL"
+                    className="w-full px-4 py-2 bg-amber-800/50 border border-orange-700/50 rounded-lg text-white placeholder-amber-400 focus:outline-none focus:border-orange-500"
+                  />
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
@@ -1104,9 +1223,17 @@ export default function RestaurantDashboard() {
               <div className="flex gap-4 pt-4">
                 <button
                   type="submit"
-                  className="flex-1 px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-lg font-semibold transition-colors"
+                  disabled={uploadingImage}
+                  className="flex-1 px-6 py-3 bg-orange-600 hover:bg-orange-500 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  {selectedItem ? 'Update Item' : 'Create Item'}
+                  {uploadingImage ? (
+                    <>
+                      <FiRefreshCw className="w-4 h-4 animate-spin" />
+                      Uploading Image...
+                    </>
+                  ) : (
+                    selectedItem ? 'Update Item' : 'Create Item'
+                  )}
                 </button>
                 <button
                   type="button"

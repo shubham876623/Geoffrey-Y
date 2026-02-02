@@ -4,6 +4,7 @@ Simple and clean
 """
 
 from fastapi import APIRouter, HTTPException, Query, UploadFile, File
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import Optional
 from services.menu_service import (
@@ -33,6 +34,7 @@ from services.menu_parser_service import parse_menu_file
 import logging
 import os
 import uuid
+from services.supabase_service import get_supabase_client
 
 logger = logging.getLogger(__name__)
 
@@ -885,3 +887,103 @@ async def get_public_menu_endpoint(restaurant_id: str):
     except Exception as e:
         logger.error(f"Error getting public menu for restaurant {restaurant_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get public menu: {str(e)}")
+
+
+@router.post("/{restaurant_id}/items/{item_id}/upload-image")
+async def upload_item_image(
+    restaurant_id: str,
+    item_id: str,
+    file: UploadFile = File(...)
+):
+    """
+    Upload an image for a menu item
+    
+    Purpose:
+    - Uploads image file to Supabase Storage
+    - Returns the public URL of the uploaded image
+    - Updates menu item with image_url
+    """
+    try:
+        # Validate file type
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.webp', '.gif']
+        file_ext = os.path.splitext(file.filename)[1].lower()
+        
+        if file_ext not in allowed_extensions:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
+            )
+        
+        # Validate file size (max 5MB)
+        file_content = await file.read()
+        if len(file_content) > 5 * 1024 * 1024:  # 5MB
+            raise HTTPException(status_code=400, detail="File size exceeds 5MB limit")
+        
+        # Upload to Supabase Storage
+        supabase = get_supabase_client()
+        
+        # Generate unique filename
+        file_id = str(uuid.uuid4())
+        file_path = f"menu-items/{restaurant_id}/{item_id}/{file_id}{file_ext}"
+        
+        # Upload file
+        try:
+            storage_response = supabase.storage.from_("menu-images").upload(
+                file_path,
+                file_content,
+                file_options={"content-type": file.content_type or "image/jpeg", "upsert": "true"}
+            )
+        except Exception as storage_error:
+            # If bucket doesn't exist, try alternative: save to local uploads folder and return URL
+            logger.warning(f"Storage upload error: {storage_error}. Using local storage fallback...")
+            uploads_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "uploads", "menu-images")
+            os.makedirs(uploads_dir, exist_ok=True)
+            local_file_path = os.path.join(uploads_dir, f"{file_id}{file_ext}")
+            with open(local_file_path, "wb") as f:
+                f.write(file_content)
+            # Return a URL that can be served by the backend
+            from config import Config
+            base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+            image_url = f"{base_url}/uploads/menu-images/{file_id}{file_ext}"
+            updated_item = update_menu_item(item_id, {"image_url": image_url})
+            return {
+                "success": True,
+                "image_url": image_url,
+                "item": updated_item,
+                "message": "Image uploaded successfully (local storage)"
+            }
+        
+        # Get public URL
+        try:
+            public_url_response = supabase.storage.from_("menu-images").get_public_url(file_path)
+            image_url = public_url_response
+        except Exception as url_error:
+            logger.error(f"Error getting public URL: {url_error}")
+            # Construct URL manually from Supabase URL
+            from config import Config
+            # Supabase storage URL format: https://{project_ref}.supabase.co/storage/v1/object/public/{bucket}/{path}
+            supabase_url = Config.SUPABASE_URL
+            if supabase_url:
+                # Extract project ref from URL (e.g., https://xxxxx.supabase.co -> xxxxx)
+                project_ref = supabase_url.replace("https://", "").replace(".supabase.co", "")
+                image_url = f"https://{project_ref}.supabase.co/storage/v1/object/public/menu-images/{file_path}"
+            else:
+                # Fallback: use local storage URL
+                base_url = os.getenv("API_BASE_URL", "http://localhost:8000")
+                image_url = f"{base_url}/uploads/menu-images/{file_id}{file_ext}"
+        
+        # Update menu item with image URL
+        updated_item = update_menu_item(item_id, {"image_url": image_url})
+        
+        return {
+            "success": True,
+            "image_url": image_url,
+            "item": updated_item,
+            "message": "Image uploaded successfully"
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error uploading item image: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to upload image: {str(e)}")

@@ -3,9 +3,10 @@ Orders API routes - handle order status updates
 Simple and clean
 """
 
-from fastapi import APIRouter, Header, HTTPException
+from fastapi import APIRouter, Header, HTTPException, Depends, Request
 from pydantic import BaseModel
-from services.order_service import update_order_status, get_order_by_id, create_self_service_order
+from services.order_service import update_order_status, get_order_by_id, create_self_service_order, cancel_order
+from routes.auth import require_role, get_current_user
 from config import Config
 from typing import List, Dict, Optional
 import logging
@@ -17,6 +18,10 @@ router = APIRouter(prefix="/api/orders", tags=["orders"])
 
 class StatusUpdateRequest(BaseModel):
     status: str
+
+
+class CancelOrderRequest(BaseModel):
+    cancellation_reason: Optional[str] = None
 
 
 class SelfServiceOrderItem(BaseModel):
@@ -168,4 +173,83 @@ async def create_self_service_order_endpoint(request: SelfServiceOrderRequest):
     except Exception as e:
         logger.error(f"Error creating self-service order: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to create order: {str(e)}")
+
+
+@router.post("/{order_id}/cancel")
+async def cancel_order_endpoint(
+    order_id: str,
+    request: CancelOrderRequest,
+    request_obj: Request,
+    x_api_key: str = Header(None)
+):
+    """
+    Cancel an order
+    Supports both API key authentication (KDS) and JWT authentication (Admin/Front Desk)
+    Allowed roles: super_admin, restaurant_admin, kds_user, frontdesk_user
+    """
+    cancelled_by = "system"
+    
+    # Try API key first (for KDS)
+    if x_api_key:
+        try:
+            verify_api_key(x_api_key)
+            cancelled_by = "kds"
+        except HTTPException:
+            # API key failed, will try JWT below
+            pass
+    
+    # If no API key or API key failed, try JWT token from Authorization header
+    if not x_api_key or cancelled_by == "system":
+        try:
+            auth_header = request_obj.headers.get("Authorization")
+            if auth_header and auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
+                from services.auth_service import verify_token
+                payload = verify_token(token)
+                if payload:
+                    user_id = payload.get("sub")
+                    if user_id:
+                        from services.auth_service import get_user_by_id
+                        current_user = await get_user_by_id(user_id)
+                        if current_user:
+                            # Verify user has permission to cancel orders
+                            allowed_roles = ["super_admin", "restaurant_admin", "kds_user", "frontdesk_user"]
+                            if current_user.get("role") not in allowed_roles:
+                                raise HTTPException(status_code=403, detail="Insufficient permissions to cancel orders")
+                            
+                            # Set cancelled_by based on role
+                            role = current_user.get("role")
+                            if role == "super_admin" or role == "restaurant_admin":
+                                cancelled_by = "admin"
+                            elif role == "kds_user":
+                                cancelled_by = "kds"
+                            elif role == "frontdesk_user":
+                                cancelled_by = "frontdesk"
+                            else:
+                                cancelled_by = "user"
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"JWT authentication failed: {e}")
+    
+    # If still no authentication, reject
+    if cancelled_by == "system":
+        raise HTTPException(status_code=401, detail="Authentication required (API key or JWT token)")
+    
+    try:
+        cancelled_order = cancel_order(
+            order_id=order_id,
+            cancellation_reason=request.cancellation_reason,
+            cancelled_by=cancelled_by
+        )
+        return {
+            "success": True,
+            "message": "Order cancelled successfully",
+            "order": cancelled_order
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error(f"Error cancelling order: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to cancel order: {str(e)}")
 

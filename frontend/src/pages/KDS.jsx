@@ -4,7 +4,7 @@ import { updateOrderStatus } from '../lib/api'
 import OrderCard from '../components/OrderCard'
 import ErrorDisplay from '../components/ErrorDisplay'
 import { useAuth } from '../context/AuthContext'
-import { FiRefreshCw, FiFilter, FiClock, FiCoffee, FiZap, FiAlertCircle, FiLogOut } from 'react-icons/fi'
+import { FiRefreshCw, FiFilter, FiClock, FiCoffee, FiZap, FiAlertCircle, FiLogOut, FiGlobe } from 'react-icons/fi'
 
 const KDS = () => {
   const { logout } = useAuth()
@@ -32,6 +32,12 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [restaurantName, setRestaurantName] = useState('')
   const [autoRefresh, setAutoRefresh] = useState(true)
+  // Language toggle: 'en' for English, 'zh' for Chinese
+  const [language, setLanguage] = useState(() => {
+    // Load from localStorage or default to English
+    const saved = localStorage.getItem('kds_language')
+    return saved || 'en'
+  })
 
   // Fetch orders from Supabase
   const fetchOrders = async () => {
@@ -133,6 +139,13 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
     }
   }
 
+  // Handle language toggle
+  const handleLanguageToggle = () => {
+    const newLanguage = language === 'en' ? 'zh' : 'en'
+    setLanguage(newLanguage)
+    localStorage.setItem('kds_language', newLanguage)
+  }
+
   // Status filter options
   const statusFilters = [
     { value: 'all', label: 'All Active', count: orders.filter(o => o.status !== 'completed').length, color: 'from-purple-500 via-pink-500 to-orange-500' },
@@ -143,109 +156,172 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-950 via-pink-950 via-rose-950 to-orange-950 text-white flex flex-col overflow-hidden relative">
-      {/* Animated Background Decorations */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-10 w-[500px] h-[500px] bg-gradient-to-br from-orange-600/20 to-rose-600/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-pink-600/10 to-purple-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white flex flex-col overflow-hidden relative">
+      {/* Professional KDS Background Image */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1578366941741-9e517759c620?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)',
+            opacity: 0.4
+          }}
+        ></div>
+        {/* Dark overlay for better contrast */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-900/85 via-slate-800/80 to-slate-900/85"></div>
       </div>
       
-      {/* Premium Header */}
-      <header className="relative bg-gradient-to-r from-white/10 via-purple-500/10 to-white/10 backdrop-blur-md border-b border-purple-300/20 px-6 sm:px-8 py-5 sm:py-6 flex-shrink-0 z-10 shadow-xl">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-5">
+      {/* Professional KDS Background Pattern */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-5 z-0">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'linear-gradient(0deg, transparent 24%, rgba(255,255,255,.05) 25%, rgba(255,255,255,.05) 26%, transparent 27%, transparent 74%, rgba(255,255,255,.05) 75%, rgba(255,255,255,.05) 76%, transparent 77%, transparent)',
+          backgroundSize: '50px 50px'
+        }}></div>
+      </div>
+      
+      {/* Subtle Status Color Accents */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-red-500 via-amber-500 via-green-500 to-blue-500 opacity-20"></div>
+      </div>
+      
+      {/* Professional Header */}
+      <header className="relative bg-slate-800/95 backdrop-blur-md border-b-2 border-slate-700/50 px-6 sm:px-8 py-4 sm:py-5 flex-shrink-0 z-10 shadow-2xl overflow-hidden">
+        {/* Header Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1578366941741-9e517759c620?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)'
+          }}
+        ></div>
+        {/* Header Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-800/90 via-slate-800/85 to-slate-800/90"></div>
+        
+        <div className="relative z-10 flex items-center justify-between flex-wrap gap-4">
+          <div className="flex items-center gap-4">
+            {/* KDS Icon Badge */}
             <div className="relative">
-              <div className="w-3 h-16 sm:h-20 bg-gradient-to-b from-purple-400 via-pink-400 to-orange-400 rounded-full shadow-lg shadow-purple-500/50"></div>
-              <div className="absolute inset-0 bg-gradient-to-b from-purple-300 to-pink-400 rounded-full blur-md opacity-50 animate-pulse"></div>
+              <div className="w-14 h-14 sm:w-16 sm:h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded-xl flex items-center justify-center border-2 border-slate-600 shadow-xl">
+                <FiCoffee className="text-2xl sm:text-3xl text-amber-400" />
+              </div>
+              <div className="absolute -inset-1 bg-amber-400/20 rounded-xl blur-md"></div>
             </div>
             <div>
               {restaurantName && (
-                <div className="mb-2">
-                  <h2 className="text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-orange-300 tracking-wide uppercase">
+                <div className="mb-1">
+                  <h2 className="text-base sm:text-lg font-bold text-slate-300 tracking-wide uppercase">
                     {restaurantName}
                   </h2>
                 </div>
               )}
-              <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight flex items-center gap-3 flex-wrap">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-orange-300 drop-shadow-2xl">
-                  Kitchen Display System
+              <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3 flex-wrap">
+                <span className="text-white">
+                  KITCHEN DISPLAY SYSTEM
                 </span>
-                <span className="text-xs sm:text-sm font-bold bg-gradient-to-r from-green-500 to-emerald-500 text-white px-3 py-1.5 rounded-full border-2 border-green-400/50 shadow-lg animate-pulse">
+                <span className="text-xs sm:text-sm font-bold bg-green-500 text-white px-3 py-1 rounded-md border border-green-400 shadow-lg flex items-center gap-1.5">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                  </span>
                   LIVE
                 </span>
               </h1>
-              <p className="text-purple-200 text-sm sm:text-base mt-2 flex items-center gap-2 font-semibold flex-wrap">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                </span>
-                Last updated: <span className="text-white font-bold">{lastUpdate.toLocaleTimeString()}</span>
-                {autoRefresh && <span className="text-xs bg-green-500/20 text-green-300 px-2 py-0.5 rounded-full border border-green-400/30">Auto-refresh ON</span>}
+              <p className="text-slate-400 text-xs sm:text-sm mt-1.5 flex items-center gap-2 font-medium flex-wrap">
+                <FiClock className="text-slate-500" />
+                <span>Last updated: <span className="text-white font-semibold">{lastUpdate.toLocaleTimeString()}</span></span>
+                {autoRefresh && (
+                  <span className="text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/30 flex items-center gap-1">
+                    <FiZap className="text-xs" />
+                    Auto-refresh
+                  </span>
+                )}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Language Toggle Button */}
+            <button
+              onClick={handleLanguageToggle}
+              className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 border-2 ${
+                language === 'zh'
+                  ? 'bg-red-600 text-white border-red-500 hover:bg-red-700' 
+                  : 'bg-slate-700 text-slate-200 border-slate-600 hover:bg-slate-600'
+              }`}
+              title={language === 'en' ? 'Switch to Chinese' : 'Switch to English'}
+            >
+              <FiGlobe className="text-sm sm:text-base" />
+              <span className="hidden sm:inline font-bold">{language === 'en' ? 'EN' : '中文'}</span>
+            </button>
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
-              className={`px-4 py-2.5 rounded-xl font-bold text-sm transition-all shadow-lg hover:shadow-xl transform hover:scale-105 ${
+              className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 border-2 ${
                 autoRefresh 
-                  ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white border-2 border-green-400/50' 
-                  : 'bg-white/10 text-purple-200 border-2 border-purple-300/30 backdrop-blur-sm'
+                  ? 'bg-green-600 text-white border-green-500 hover:bg-green-700' 
+                  : 'bg-slate-700 text-slate-200 border-slate-600 hover:bg-slate-600'
               }`}
             >
-              <FiZap className={`inline mr-2 ${autoRefresh ? 'animate-pulse' : ''}`} />
-              Auto
+              <FiZap className={`text-sm sm:text-base ${autoRefresh ? 'animate-pulse' : ''}`} />
+              <span className="hidden sm:inline">Auto</span>
             </button>
             <button
               onClick={fetchOrders}
-              className="px-5 py-2.5 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white rounded-xl hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 transition-all shadow-xl hover:shadow-2xl font-bold text-sm transform hover:scale-105 flex items-center gap-2"
+              className="px-4 sm:px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg border-2 border-slate-600 hover:border-slate-500 transition-all shadow-lg hover:shadow-xl font-semibold text-xs sm:text-sm flex items-center gap-2"
             >
-              <FiRefreshCw className={`text-base ${isLoading ? 'animate-spin' : ''}`} />
+              <FiRefreshCw className={`text-sm sm:text-base ${isLoading ? 'animate-spin' : ''}`} />
               <span className="hidden sm:inline">Refresh</span>
             </button>
             <button
               onClick={handleLogout}
-              className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl hover:from-red-600 hover:to-rose-600 transition-all shadow-xl hover:shadow-2xl font-bold text-sm transform hover:scale-105 flex items-center gap-2"
+              className="px-4 sm:px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg border-2 border-red-500 hover:border-red-400 transition-all shadow-lg hover:shadow-xl font-semibold text-xs sm:text-sm flex items-center gap-2"
             >
-              <FiLogOut className="text-base" />
+              <FiLogOut className="text-sm sm:text-base" />
               <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
       </header>
 
-      {/* Premium Status Filters */}
-      <div className="relative bg-gradient-to-r from-white/5 via-purple-500/5 to-white/5 backdrop-blur-md border-b border-purple-300/20 px-6 sm:px-8 py-4 flex-shrink-0 z-10 overflow-x-auto">
-        <div className="flex items-center gap-3 sm:gap-4 pb-2 min-w-max">
-          {statusFilters.map((filter, index) => (
-            <button
-              key={filter.value}
-              onClick={() => setSelectedStatus(filter.value)}
-              className={`px-5 sm:px-8 py-3 sm:py-4 rounded-2xl font-black text-sm sm:text-base transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:-translate-y-1 relative overflow-hidden group flex-shrink-0 ${
-                selectedStatus === filter.value
-                  ? `bg-gradient-to-r ${filter.color} text-white shadow-2xl scale-105 ring-4 ring-white/20`
-                  : 'bg-white/10 backdrop-blur-sm text-purple-200 hover:bg-white/20 border-2 border-purple-300/30'
-              }`}
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              {selectedStatus === filter.value && (
-                <div className="absolute inset-0 bg-gradient-to-r from-white/30 to-transparent animate-shimmer"></div>
-              )}
-              <span className="relative z-10 flex items-center gap-3 whitespace-nowrap">
-                {filter.label}
+      {/* Professional Status Filters */}
+      <div className="relative bg-slate-800/95 backdrop-blur-md border-b-2 border-slate-700/50 px-6 sm:px-8 py-3 flex-shrink-0 z-10 overflow-x-auto shadow-lg overflow-hidden">
+        {/* Filters Background Image */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-15"
+          style={{
+            backgroundImage: 'url(https://images.unsplash.com/photo-1578366941741-9e517759c620?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D)'
+          }}
+        ></div>
+        {/* Filters Dark Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-800/90 via-slate-800/85 to-slate-800/90"></div>
+        
+        <div className="relative z-10 flex items-center gap-2 sm:gap-3 min-w-max">
+          {statusFilters.map((filter) => {
+            // Professional color mapping for KDS
+            const statusColors = {
+              'all': selectedStatus === filter.value ? 'bg-slate-600 border-slate-500 text-white' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-slate-650',
+              'pending': selectedStatus === filter.value ? 'bg-red-600 border-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-red-600/20',
+              'preparing': selectedStatus === filter.value ? 'bg-amber-600 border-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-amber-600/20',
+              'ready': selectedStatus === filter.value ? 'bg-green-600 border-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-green-600/20',
+              'completed': selectedStatus === filter.value ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-blue-600/20'
+            }
+            const buttonClass = statusColors[filter.value] || statusColors['all']
+            
+            return (
+              <button
+                key={filter.value}
+                onClick={() => setSelectedStatus(filter.value)}
+                className={`px-4 sm:px-6 py-2.5 sm:py-3 rounded-lg font-bold text-xs sm:text-sm transition-all duration-200 border-2 flex-shrink-0 flex items-center gap-2 ${buttonClass}`}
+              >
+                <span className="whitespace-nowrap">{filter.label}</span>
                 {filter.count > 0 && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-black relative z-10 ${
+                  <span className={`px-2 py-0.5 rounded-md text-xs font-black ${
                     selectedStatus === filter.value
-                      ? 'bg-white/30 text-white backdrop-blur-sm border border-white/50'
-                      : 'bg-purple-600/50 text-purple-200 border border-purple-400/50'
+                      ? 'bg-white/20 text-white border border-white/30'
+                      : 'bg-slate-600 text-slate-200 border border-slate-500'
                   }`}>
                     {filter.count}
                   </span>
                 )}
-              </span>
-            </button>
-          ))}
+              </button>
+            )
+          })}
         </div>
       </div>
 
@@ -255,28 +331,26 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
           <div className="flex items-center justify-center h-full min-h-[400px]">
             <div className="text-center animate-fade-in">
               <div className="relative inline-block mb-6">
-                <div className="w-20 h-20 border-4 border-purple-400 border-t-pink-500 rounded-full animate-spin mx-auto"></div>
-                <div className="absolute inset-0 w-20 h-20 border-4 border-transparent border-r-orange-400 rounded-full animate-spin mx-auto" style={{ animationDuration: '1.2s' }}></div>
+                <div className="w-16 h-16 border-4 border-slate-700 border-t-amber-500 rounded-full animate-spin mx-auto"></div>
               </div>
-              <p className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-orange-300 text-xl sm:text-2xl font-black mb-2">
+              <p className="text-slate-300 text-lg sm:text-xl font-bold mb-2">
                 Loading orders...
               </p>
-              <p className="text-purple-300 text-sm">Please wait</p>
+              <p className="text-slate-500 text-sm">Please wait</p>
             </div>
           </div>
         ) : filteredOrders.length === 0 ? (
           <div className="flex items-center justify-center h-full min-h-[400px]">
             <div className="text-center animate-fade-in">
-              <div className="relative inline-block mb-8">
-                <div className="w-32 h-32 bg-gradient-to-br from-purple-600/30 via-pink-600/30 to-orange-600/30 rounded-full blur-2xl animate-pulse absolute inset-0"></div>
-                <div className="relative w-32 h-32 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center shadow-2xl">
-                  <FiClock className="w-16 h-16 text-white" />
+              <div className="relative inline-block mb-6">
+                <div className="w-20 h-20 bg-slate-800 rounded-xl flex items-center justify-center border-2 border-slate-700 shadow-xl">
+                  <FiClock className="w-10 h-10 text-slate-500" />
                 </div>
               </div>
-              <p className="text-transparent bg-clip-text bg-gradient-to-r from-purple-300 via-pink-300 to-orange-300 text-2xl sm:text-3xl font-black mb-3">
+              <p className="text-slate-300 text-xl sm:text-2xl font-bold mb-2">
                 No orders found
               </p>
-              <p className="text-purple-300 text-base sm:text-lg">
+              <p className="text-slate-500 text-sm sm:text-base">
                 {selectedStatus === 'all' 
                   ? 'No active orders at the moment'
                   : `No ${selectedStatus} orders at the moment`
@@ -298,6 +372,7 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
                   isInteractive={true}
                   showElapsedTime={true}
                   isCompact={false}
+                  language={language}
                 />
               </div>
             ))}

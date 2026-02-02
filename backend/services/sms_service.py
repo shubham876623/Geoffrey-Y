@@ -59,6 +59,12 @@ def format_sms_message(
         message += "Your order is now ready for pickup.\n"
         message += "Please come by at your convenience.\n"
         message += "Thank you!"
+    elif status == "cancelled":
+        # Order Cancelled message
+        message = f"{restaurant_name}: Order Cancelled\n"
+        message += f"Your order #{order_number} has been cancelled.\n"
+        message += "If you have any questions, please contact us.\n"
+        message += "We apologize for any inconvenience."
     else:
         # No SMS for other statuses (should not reach here)
         return ""
@@ -113,10 +119,10 @@ def send_sms(
     Returns:
         Dict with 'success' (bool) and 'message_id' (str) or 'error' (str)
     """
-    # Send SMS for "pending" (Order Received) or "ready" (Order Ready) status
-    if status not in ["pending", "ready"]:
-        logger.info(f"Skipping SMS for status '{status}' (order {order_number}) - SMS only sent for 'pending' or 'ready'")
-        return {"success": False, "error": f"SMS not sent for status '{status}' - only sent for 'pending' or 'ready'"}
+    # Send SMS for "pending" (Order Received), "ready" (Order Ready), or "cancelled" (Order Cancelled) status
+    if status not in ["pending", "ready", "cancelled"]:
+        logger.info(f"Skipping SMS for status '{status}' (order {order_number}) - SMS only sent for 'pending', 'ready', or 'cancelled'")
+        return {"success": False, "error": f"SMS not sent for status '{status}' - only sent for 'pending', 'ready', or 'cancelled'"}
     
     # Get Twilio client
     client = get_twilio_client()
@@ -212,6 +218,56 @@ def send_order_status_sms(order: Dict, new_status: str) -> Dict:
         
     except Exception as e:
         error_msg = f"Error in send_order_status_sms: {str(e)}"
+        logger.error(error_msg)
+        return {"success": False, "error": error_msg}
+
+
+def send_order_cancellation_sms(order: Dict, cancellation_reason: Optional[str] = None) -> Dict:
+    """
+    Convenience function to send cancellation SMS to customer
+    Args:
+        order: Order dictionary (must include order_number, customer_phone, customer_name, restaurant_id)
+        cancellation_reason: Optional reason for cancellation (not included in SMS for privacy)
+    Returns:
+        Dict with SMS send result
+    """
+    try:
+        customer_phone = order.get("customer_phone")
+        order_number = order.get("order_number")
+        customer_name = order.get("customer_name")
+        restaurant_id = order.get("restaurant_id")
+        
+        if not customer_phone:
+            error_msg = "Customer phone number not found in order"
+            logger.warning(error_msg)
+            return {"success": False, "error": error_msg}
+        
+        if not order_number:
+            error_msg = "Order number not found in order"
+            logger.warning(error_msg)
+            return {"success": False, "error": error_msg}
+        
+        # Get restaurant name
+        restaurant_name = "the restaurant"
+        if restaurant_id:
+            try:
+                restaurant = get_restaurant_by_id(restaurant_id)
+                if restaurant and restaurant.get("name"):
+                    restaurant_name = restaurant["name"]
+            except Exception as e:
+                logger.warning(f"Failed to get restaurant name for SMS: {e}")
+        
+        return send_sms(
+            to_phone=customer_phone,
+            order_number=order_number,
+            status="cancelled",
+            restaurant_name=restaurant_name,
+            restaurant_id=restaurant_id,
+            customer_name=customer_name
+        )
+        
+    except Exception as e:
+        error_msg = f"Error in send_order_cancellation_sms: {str(e)}"
         logger.error(error_msg)
         return {"success": False, "error": error_msg}
 

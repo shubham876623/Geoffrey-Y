@@ -28,7 +28,7 @@ def parse_order_data(webhook_data: Dict) -> Dict:
     if not transcript:
         raise Exception("No transcript found in webhook data")
     
-    # Step 2: Get customer info from webhook
+    # Step 2: Get customer info from webhook (PRIORITY - use webhook data first)
     customer_name = get_customer_name(webhook_data)
     customer_phone = get_customer_phone(webhook_data)
     
@@ -36,8 +36,14 @@ def parse_order_data(webhook_data: Dict) -> Dict:
     parsed_order = parse_with_openai(transcript)
     
     # Step 4: Add customer info to parsed order
-    if not parsed_order.get("customer_phone"):
+    # PRIORITY: Always use webhook phone_number over transcript-extracted phone
+    # The webhook phone_number is the actual caller's number and is more reliable
+    if customer_phone:
         parsed_order["customer_phone"] = customer_phone
+    elif not parsed_order.get("customer_phone"):
+        # Only use transcript phone if webhook doesn't have it
+        parsed_order["customer_phone"] = ""
+    
     if not parsed_order.get("customer_name"):
         parsed_order["customer_name"] = customer_name
     
@@ -142,6 +148,13 @@ Return JSON with this exact structure:
     }}
   ]
 }}
+
+IMPORTANT PHONE NUMBER RULES:
+- If a phone number is mentioned in the transcript, extract it EXACTLY as spoken (digits only, no country code)
+- DO NOT add any country code prefix like +91, +1, etc.
+- Return phone number as digits only (e.g., "1234567890" not "+911234567890" or "+11234567890")
+- If no phone number is mentioned, return null for customer_phone
+- The system will format all phone numbers as US format (+1XXXXXXXXXX)
 
 Extract all items with quantities, sizes, and pieces.
 Return valid JSON only, no extra text."""

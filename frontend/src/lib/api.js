@@ -75,6 +75,28 @@ export const updateOrderStatus = async (orderId, status) => {
 }
 
 /**
+ * Cancel an order
+ * @param {string} orderId - Order ID
+ * @param {string} [reason] - Optional cancellation reason
+ * @returns {Promise}
+ */
+export const cancelOrder = async (orderId, reason = '') => {
+  try {
+    const response = await api.post(`/api/orders/${orderId}/cancel`, {
+      cancellation_reason: reason || undefined
+    })
+    return response.data
+  } catch (error) {
+    if (error.response) {
+      console.error('❌ Error cancelling order:', error.response.status, error.response.data)
+    } else {
+      console.error('❌ Error cancelling order:', error.message)
+    }
+    throw error
+  }
+}
+
+/**
  * Get all orders (with optional filters)
  * @param {Object} filters - Optional filters (restaurant_id, status, etc.)
  * @returns {Promise}
@@ -270,6 +292,29 @@ export const deleteMenuItem = async (itemId) => {
     return response.data
   } catch (error) {
     console.error('❌ Error deleting menu item:', error)
+    throw error
+  }
+}
+
+/**
+ * Upload image for a menu item
+ * @param {string} restaurantId - Restaurant ID
+ * @param {string} itemId - Menu item ID
+ * @param {File} file - Image file
+ * @returns {Promise}
+ */
+export const uploadMenuItemImage = async (restaurantId, itemId, file) => {
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    const response = await api.post(`/api/menu/${restaurantId}/items/${itemId}/upload-image`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    return response.data
+  } catch (error) {
+    console.error('❌ Error uploading menu item image:', error)
     throw error
   }
 }
@@ -749,6 +794,105 @@ api.interceptors.request.use(
     return Promise.reject(error)
   }
 )
+
+// ============================================
+// ANALYTICS API FUNCTIONS
+// ============================================
+
+/**
+ * Get analytics overview for a restaurant
+ * @param {string} restaurantId - Restaurant ID
+ * @param {string} startDate - Optional start date (ISO format)
+ * @param {string} endDate - Optional end date (ISO format)
+ * @returns {Promise}
+ */
+export const getAnalyticsOverview = async (restaurantId, startDate = null, endDate = null) => {
+  try {
+    const params = {}
+    if (startDate) params.start_date = startDate
+    if (endDate) params.end_date = endDate
+    const response = await api.get(`/api/analytics/${restaurantId}/overview`, { params })
+    return response.data
+  } catch (error) {
+    console.error('❌ Error fetching analytics overview:', error)
+    throw error
+  }
+}
+
+/**
+ * Get revenue trends over time
+ * @param {string} restaurantId - Restaurant ID
+ * @param {number} days - Number of days to analyze (default: 30)
+ * @returns {Promise}
+ */
+export const getRevenueTrends = async (restaurantId, days = 30) => {
+  try {
+    const response = await api.get(`/api/analytics/${restaurantId}/revenue-trends`, {
+      params: { days }
+    })
+    return response.data
+  } catch (error) {
+    console.error('❌ Error fetching revenue trends:', error)
+    throw error
+  }
+}
+
+/**
+ * Get popular menu items
+ * @param {string} restaurantId - Restaurant ID
+ * @param {number} limit - Number of items to return (default: 10)
+ * @param {number} days - Number of days to analyze (default: 30)
+ * @returns {Promise}
+ */
+export const getPopularItems = async (restaurantId, limit = 10, days = 30) => {
+  try {
+    const response = await api.get(`/api/analytics/${restaurantId}/popular-items`, {
+      params: { limit, days }
+    })
+    return response.data
+  } catch (error) {
+    console.error('❌ Error fetching popular items:', error)
+    throw error
+  }
+}
+
+/**
+ * Get order timeline (orders by hour)
+ * @param {string} restaurantId - Restaurant ID
+ * @param {number} days - Number of days to analyze (default: 7)
+ * @returns {Promise}
+ */
+export const getOrderTimeline = async (restaurantId, days = 7) => {
+  try {
+    const response = await api.get(`/api/analytics/${restaurantId}/timeline`, {
+      params: { days }
+    })
+    return response.data
+  } catch (error) {
+    console.error('❌ Error fetching order timeline:', error)
+    throw error
+  }
+}
+
+/**
+ * Get comprehensive analytics (all metrics in one call)
+ * @param {string} restaurantId - Restaurant ID
+ * @param {string} startDate - Optional start date (ISO format)
+ * @param {string} endDate - Optional end date (ISO format)
+ * @returns {Promise}
+ */
+export const getComprehensiveAnalytics = async (restaurantId, startDate = null, endDate = null) => {
+  try {
+    const params = {}
+    if (startDate) params.start_date = startDate
+    if (endDate) params.end_date = endDate
+    const response = await api.get(`/api/analytics/${restaurantId}/comprehensive`, { params })
+    return response.data
+  } catch (error) {
+    console.error('❌ Error fetching comprehensive analytics:', error)
+    throw error
+  }
+}
 
 export default api
 

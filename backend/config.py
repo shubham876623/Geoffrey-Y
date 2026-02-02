@@ -33,6 +33,14 @@ class Config:
     # Webhook Security (optional)
     WEBHOOK_SECRET = os.getenv("WEBHOOK_SECRET")
     
+    # Synthflow Integration
+    # Update this with your actual Synthflow webhook URL
+    # Format: https://workflow.synthflow.ai/api/v1/webhooks/{your-webhook-id}
+    SYNTHFLOW_MENU_WEBHOOK_URL = os.getenv(
+        "SYNTHFLOW_MENU_WEBHOOK_URL",
+        "https://workflow.synthflow.ai/api/v1/webhooks/EyXDXnhLYM26DysMw88mh"
+    )
+    
     # OpenAI (required - for parsing and translation)
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     

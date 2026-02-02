@@ -815,15 +815,26 @@ export default function AdminDashboard() {
               {(userForm.role !== 'super_admin') && (
                 <div>
                   <label className="block text-indigo-200 text-sm font-semibold mb-2">
-                    Restaurant ID (Required for non-super-admin)
+                    Restaurant (Required for non-super-admin)
                   </label>
-                  <input
-                    type="text"
+                  <select
                     value={userForm.restaurant_id}
                     onChange={(e) => setUserForm({...userForm, restaurant_id: e.target.value})}
-                    className="w-full px-4 py-2 bg-indigo-800/50 border border-purple-700/50 rounded-lg text-white placeholder-indigo-400 focus:outline-none focus:border-purple-500"
+                    className="w-full px-4 py-2 bg-indigo-800/50 border border-purple-700/50 rounded-lg text-white focus:outline-none focus:border-purple-500"
                     required={userForm.role !== 'super_admin'}
-                  />
+                  >
+                    <option value="">Select a restaurant...</option>
+                    {restaurants.map((restaurant) => (
+                      <option key={restaurant.id} value={restaurant.id}>
+                        {restaurant.name} ({restaurant.phone})
+                      </option>
+                    ))}
+                  </select>
+                  {restaurants.length === 0 && (
+                    <p className="text-yellow-400 text-sm mt-1">
+                      No restaurants available. Please create a restaurant first.
+                    </p>
+                  )}
                 </div>
               )}
               <div className="flex gap-4 pt-4">

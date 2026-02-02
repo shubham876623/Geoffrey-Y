@@ -841,29 +841,52 @@ export default function Menu() {
                 {/* Decorative top accent */}
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-red-300/50 to-transparent"></div>
                 
-                {/* Beautiful Gradient Header Section with Chinese Pattern - Professional Height */}
-                <div className={`h-32 lg:h-40 bg-gradient-to-br ${colorClass} relative overflow-hidden flex-shrink-0`}>
-                  {/* Chinese pattern overlay */}
-                  <div className="absolute inset-0 opacity-10">
-                    <div className="absolute top-2 left-2 text-2xl text-white/30">福</div>
-                    <div className="absolute bottom-2 right-2 text-xl text-white/30">囍</div>
-                    <div className="absolute top-0 left-0 w-full h-full" style={{
-                      backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.2) 1px, transparent 0)',
-                      backgroundSize: '20px 20px'
-                    }}></div>
-                  </div>
+                {/* Image or Gradient Header Section - Professional Height */}
+                <div className={`h-32 lg:h-40 relative overflow-hidden flex-shrink-0 ${!item.image_url ? `bg-gradient-to-br ${colorClass}` : ''}`}>
+                  {item.image_url ? (
+                    <>
+                      {/* Actual Food Image */}
+                      <img
+                        src={item.image_url}
+                        alt={item.name}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback to gradient if image fails to load
+                          e.target.style.display = 'none'
+                          e.target.parentElement.classList.add(`bg-gradient-to-br`, colorClass)
+                        }}
+                      />
+                      {/* Overlay for better text readability */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                      {/* Icon Badge - shown on image */}
+                      <div className="absolute top-3 left-3 lg:top-4 lg:left-4 w-12 h-12 lg:w-14 lg:h-14 bg-white/35 backdrop-blur-lg rounded-xl lg:rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-xl border border-white/50">
+                        <IconComponent className="w-6 h-6 lg:w-7 lg:h-7 text-white drop-shadow-lg" />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      {/* Chinese pattern overlay - only for gradient backgrounds */}
+                      <div className="absolute inset-0 opacity-10">
+                        <div className="absolute top-2 left-2 text-2xl text-white/30">福</div>
+                        <div className="absolute bottom-2 right-2 text-xl text-white/30">囍</div>
+                        <div className="absolute top-0 left-0 w-full h-full" style={{
+                          backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.2) 1px, transparent 0)',
+                          backgroundSize: '20px 20px'
+                        }}></div>
+                      </div>
+                      {/* Icon Badge with Chinese style - Professional Size */}
+                      <div className="absolute top-3 left-3 lg:top-4 lg:left-4 w-12 h-12 lg:w-14 lg:h-14 bg-white/35 backdrop-blur-lg rounded-xl lg:rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-xl border border-white/50">
+                        <IconComponent className="w-6 h-6 lg:w-7 lg:h-7 text-white drop-shadow-lg" />
+                      </div>
+                    </>
+                  )}
                   
                   {/* Decorative corner elements */}
                   <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-white/40"></div>
                   <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-white/40"></div>
                   
-                  {/* Icon Badge with Chinese style - Professional Size */}
-                  <div className="absolute top-3 left-3 lg:top-4 lg:left-4 w-12 h-12 lg:w-14 lg:h-14 bg-white/35 backdrop-blur-lg rounded-xl lg:rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-12 transition-all duration-300 shadow-xl border border-white/50">
-                    <IconComponent className="w-6 h-6 lg:w-7 lg:h-7 text-white drop-shadow-lg" />
-                  </div>
-                  
                   {/* Price Badge - Chinese style - Professional Size */}
-                  <div className="absolute top-3 right-3 lg:top-4 lg:right-4 bg-gradient-to-br from-white/98 to-amber-50/98 backdrop-blur-lg text-gray-900 px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl lg:rounded-2xl shadow-2xl font-display font-black text-base lg:text-lg group-hover:scale-110 transition-transform duration-300 border-2 border-amber-200/50">
+                  <div className="absolute top-3 right-3 lg:top-4 lg:right-4 bg-gradient-to-br from-white/98 to-amber-50/98 backdrop-blur-lg text-gray-900 px-3 py-1.5 lg:px-4 lg:py-2 rounded-xl lg:rounded-2xl shadow-2xl font-display font-black text-base lg:text-lg group-hover:scale-110 transition-transform duration-300 border-2 border-amber-200/50 z-10">
                     <span className="text-xs text-amber-600 font-bold">$</span>
                     {item.price?.toFixed(2)}
                   </div>
@@ -872,9 +895,13 @@ export default function Menu() {
                   <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-white/40"></div>
                   <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-white/40"></div>
                   
-                  {/* Floating decorative circles */}
-                  <div className="absolute -bottom-10 -right-10 w-28 h-28 bg-white/25 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
-                  <div className="absolute -top-8 -left-8 w-24 h-24 bg-white/25 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                  {/* Floating decorative circles - only for gradient backgrounds */}
+                  {!item.image_url && (
+                    <>
+                      <div className="absolute -bottom-10 -right-10 w-28 h-28 bg-white/25 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                      <div className="absolute -top-8 -left-8 w-24 h-24 bg-white/25 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700"></div>
+                    </>
+                  )}
                 </div>
                 
                 {/* Content Section with elegant styling - Professional Padding */}
