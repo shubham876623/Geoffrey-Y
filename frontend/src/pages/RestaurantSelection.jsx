@@ -95,13 +95,14 @@ export default function RestaurantSelection() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center p-4 relative overflow-x-hidden overflow-y-auto">
         {/* Background */}
         <div className="fixed inset-0 overflow-hidden pointer-events-none">
           <div className="absolute top-20 left-10 w-72 h-72 bg-purple-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse"></div>
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-pink-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
         
+        <div className="menu-cart-zoom-out relative z-10 flex items-center justify-center w-full">
         <div className="relative text-center">
           <div className="relative inline-block mb-6">
             <div className="absolute inset-0 bg-purple-400/20 rounded-full blur-2xl animate-pulse"></div>
@@ -113,13 +114,15 @@ export default function RestaurantSelection() {
           </h2>
           <p className="text-gray-600 font-medium">Please wait while we fetch the best dining options...</p>
         </div>
+        </div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center p-4 overflow-x-hidden">
+        <div className="menu-cart-zoom-out flex items-center justify-center w-full">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center">
           <FiAlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-gray-800 mb-2">Error Loading Restaurants</h2>
@@ -131,24 +134,27 @@ export default function RestaurantSelection() {
             Try Again
           </button>
         </div>
+        </div>
       </div>
     )
   }
 
   if (restaurants.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-orange-50 flex items-center justify-center p-4 overflow-x-hidden">
+        <div className="menu-cart-zoom-out flex items-center justify-center w-full">
         <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 text-center">
           <FiHome className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-black text-gray-800 mb-2">No Restaurants Available</h2>
           <p className="text-gray-600">There are no restaurants available at this time.</p>
+        </div>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 relative overflow-hidden">
+    <div className="min-h-screen py-8 sm:py-12 px-4 sm:px-6 relative overflow-x-hidden overflow-y-auto">
       {/* Professional Background Image with Overlay */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Background Image */}
@@ -181,7 +187,8 @@ export default function RestaurantSelection() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto relative z-10">
+      <div className="menu-cart-zoom-out relative z-10">
+      <div className="max-w-7xl mx-auto">
         {/* Professional Header */}
         <div className="text-center mb-10 sm:mb-12">
           {/* Logo/Icon with professional styling */}
@@ -323,6 +330,7 @@ export default function RestaurantSelection() {
             ))
           )}
         </div>
+      </div>
       </div>
     </div>
   )

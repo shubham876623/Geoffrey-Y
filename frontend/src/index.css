@@ -108,6 +108,34 @@ body {
   min-height: 100vh;
 }
 
+/* Slight zoom-out for Menu and Cart so more content fits on screen */
+.menu-cart-zoom-out {
+  transform: scale(0.88);
+  transform-origin: top center;
+  width: 113.64%; /* 100% / 0.88 so visual width stays 100% */
+  margin-left: -6.82%;
+  min-height: 113.64vh; /* so vertical space still fills after scale */
+}
+@media (max-width: 640px) {
+  .menu-cart-zoom-out {
+    transform: scale(0.92);
+    width: 108.7%;
+    margin-left: -4.35%;
+    min-height: 108.7vh;
+  }
+}
+
+/* Zoom-out for Item Modal (menu item detail) - centered scale only */
+.item-modal-zoom-out {
+  transform: scale(0.88);
+  transform-origin: center center;
+}
+@media (max-width: 640px) {
+  .item-modal-zoom-out {
+    transform: scale(0.92);
+  }
+}
+
 /* Smooth transitions */
 * {
   transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),

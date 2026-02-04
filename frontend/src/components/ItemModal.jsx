@@ -53,7 +53,7 @@ export default function ItemModal({ item, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white/95 backdrop-blur-md rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-red-100/50 animate-scale-in" onClick={(e) => e.stopPropagation()}>
+      <div className="item-modal-zoom-out bg-white/95 backdrop-blur-md rounded-3xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-red-100/50 animate-scale-in" onClick={(e) => e.stopPropagation()}>
         {/* Premium Header with Chinese Colors */}
         <div className="sticky top-0 bg-gradient-to-r from-amber-50 via-yellow-50 to-stone-50 border-b border-red-200/50 px-8 py-6 flex items-center justify-between backdrop-blur-sm z-10">
           <div>

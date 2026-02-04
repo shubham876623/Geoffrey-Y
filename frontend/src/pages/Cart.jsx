@@ -211,6 +211,7 @@ export default function Cart() {
           <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-orange-200/30 to-rose-200/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
         </div>
         
+        <div className="menu-cart-zoom-out relative z-10 flex items-center justify-center w-full">
         <div className="relative text-center animate-fade-in">
           <div className="w-32 h-32 mx-auto mb-6 bg-gradient-to-br from-purple-400 via-pink-400 to-orange-400 rounded-full flex items-center justify-center shadow-2xl">
             <FiShoppingCart className="w-16 h-16 text-white" />
@@ -232,18 +233,20 @@ export default function Cart() {
             Browse Menu
           </button>
         </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 via-rose-50 to-orange-50 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 via-rose-50 to-orange-50 relative overflow-x-hidden overflow-y-auto">
       {/* Animated Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-gradient-to-br from-purple-200/30 to-pink-200/30 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-orange-200/30 to-rose-200/30 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }}></div>
       </div>
 
+      <div className="menu-cart-zoom-out relative z-10 w-full">
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-10">
         {/* Premium Header */}
         <div className="flex items-center gap-4 mb-6 sm:mb-8 animate-slide-up">
@@ -423,6 +426,7 @@ export default function Cart() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   )

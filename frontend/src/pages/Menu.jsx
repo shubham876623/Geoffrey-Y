@@ -454,7 +454,7 @@ export default function Menu() {
   }
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
+    <div className="min-h-screen relative overflow-x-hidden overflow-y-auto">
       {/* Beautiful Food Background Image with Overlay */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Background Image */}
@@ -502,6 +502,7 @@ export default function Menu() {
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/10"></div>
       </div>
 
+      <div className="menu-cart-zoom-out relative z-10">
       {/* Beautiful Chinese Restaurant Header with Search Bar */}
       <header className="relative bg-white/95 backdrop-blur-xl shadow-2xl sticky top-0 z-40 border-b-4 border-red-300/70">
         {/* Decorative top border pattern */}
@@ -1052,6 +1053,8 @@ export default function Menu() {
             </div>
           </div>
         )}
+      </div>
+
       </div>
 
       {/* Item Modal */}
