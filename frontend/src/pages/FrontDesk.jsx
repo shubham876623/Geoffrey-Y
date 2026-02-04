@@ -4,7 +4,8 @@ import OrderCard from '../components/OrderCard'
 import ErrorDisplay from '../components/ErrorDisplay'
 import { useAuth } from '../context/AuthContext'
 import { cancelOrder } from '../lib/api'
-import { FiRefreshCw, FiClock, FiUsers, FiZap, FiLogOut, FiMonitor } from 'react-icons/fi'
+import { FiRefreshCw, FiClock, FiUsers, FiZap, FiLogOut, FiMonitor, FiGlobe } from 'react-icons/fi'
+import { kdsUiTranslations, statusFilterKeys } from '../lib/kdsUiTranslations'
 
 const FrontDesk = () => {
   const { logout } = useAuth()
@@ -31,6 +32,10 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
   const [isLoading, setIsLoading] = useState(true)
   const [lastUpdate, setLastUpdate] = useState(new Date())
   const [autoRefresh, setAutoRefresh] = useState(true)
+  const [language, setLanguage] = useState(() => {
+    const saved = localStorage.getItem('frontdesk_language')
+    return saved || 'en'
+  })
 
   // Fetch orders from Supabase
   const fetchOrders = async () => {
@@ -125,14 +130,21 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
     }
   }
 
-  // Status filter options
+  const handleLanguageToggle = () => {
+    const newLanguage = language === 'en' ? 'zh' : 'en'
+    setLanguage(newLanguage)
+    localStorage.setItem('frontdesk_language', newLanguage)
+  }
+
+  const t = kdsUiTranslations[language] || kdsUiTranslations.en
+  // Status filter options (labels from translations)
   const statusFilters = [
-    { value: 'all', label: 'All Orders', count: orders.length, color: 'from-blue-500 via-cyan-500 to-blue-500' },
-    { value: 'pending', label: 'Pending', count: orders.filter(o => o.status === 'pending').length, color: 'from-red-500 to-rose-500' },
-    { value: 'preparing', label: 'Preparing', count: orders.filter(o => o.status === 'preparing').length, color: 'from-amber-500 to-orange-500' },
-    { value: 'ready', label: 'Ready', count: orders.filter(o => o.status === 'ready').length, color: 'from-green-500 to-emerald-500' },
-    { value: 'completed', label: 'Completed', count: orders.filter(o => o.status === 'completed').length, color: 'from-blue-500 to-cyan-500' },
-    { value: 'cancelled', label: 'Cancelled', count: orders.filter(o => o.status === 'cancelled').length, color: 'from-gray-500 to-slate-500' }
+    { value: 'all', label: t.allOrders, count: orders.length, color: 'from-blue-500 via-cyan-500 to-blue-500' },
+    { value: 'pending', label: t.pending, count: orders.filter(o => o.status === 'pending').length, color: 'from-red-500 to-rose-500' },
+    { value: 'preparing', label: t.preparing, count: orders.filter(o => o.status === 'preparing').length, color: 'from-amber-500 to-orange-500' },
+    { value: 'ready', label: t.ready, count: orders.filter(o => o.status === 'ready').length, color: 'from-green-500 to-emerald-500' },
+    { value: 'completed', label: t.completed, count: orders.filter(o => o.status === 'completed').length, color: 'from-blue-500 to-cyan-500' },
+    { value: 'cancelled', label: t.cancelled, count: orders.filter(o => o.status === 'cancelled').length, color: 'from-gray-500 to-slate-500' }
   ]
 
   return (
@@ -188,31 +200,43 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
             <div>
               <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="text-white">
-                  FRONT DESK DISPLAY
+                  {t.frontDeskDisplay}
                 </span>
                 <span className="text-xs sm:text-sm font-bold bg-blue-500 text-white px-3 py-1 rounded-md border border-blue-400 shadow-lg flex items-center gap-1.5">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                   </span>
-                  MONITOR
+                  {t.monitor}
                 </span>
               </h1>
               <p className="text-slate-400 text-xs sm:text-sm mt-1.5 flex items-center gap-2 font-medium flex-wrap">
                 <FiUsers className="text-slate-500" />
-                <span><span className="text-white font-semibold">{orders.length}</span> total orders</span>
+                <span><span className="text-white font-semibold">{orders.length}</span> {t.totalOrders}</span>
                 <FiClock className="text-slate-500" />
-                <span>Last updated: <span className="text-white font-semibold">{lastUpdate.toLocaleTimeString()}</span></span>
+                <span>{t.lastUpdated} <span className="text-white font-semibold">{lastUpdate.toLocaleTimeString()}</span></span>
                 {autoRefresh && (
                   <span className="text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/30 flex items-center gap-1">
                     <FiZap className="text-xs" />
-                    Auto-refresh
+                    {t.autoRefresh}
                   </span>
                 )}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={handleLanguageToggle}
+              className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 border-2 ${
+                language === 'zh'
+                  ? 'bg-red-600 text-white border-red-500 hover:bg-red-700'
+                  : 'bg-slate-700 text-slate-200 border-slate-600 hover:bg-slate-600'
+              }`}
+              title={language === 'en' ? t.switchToChinese : t.switchToEnglish}
+            >
+              <FiGlobe className="text-sm sm:text-base" />
+              <span className="hidden sm:inline font-bold">{language === 'en' ? 'EN' : '中文'}</span>
+            </button>
             <button
               onClick={() => setAutoRefresh(!autoRefresh)}
               className={`px-3 sm:px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm transition-all shadow-lg hover:shadow-xl flex items-center gap-1.5 border-2 ${
@@ -222,21 +246,21 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
               }`}
             >
               <FiZap className={`text-sm sm:text-base ${autoRefresh ? 'animate-pulse' : ''}`} />
-              <span className="hidden sm:inline">Auto</span>
+              <span className="hidden sm:inline">{t.auto}</span>
             </button>
             <button
               onClick={fetchOrders}
               className="px-4 sm:px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg border-2 border-slate-600 hover:border-slate-500 transition-all shadow-lg hover:shadow-xl font-semibold text-xs sm:text-sm flex items-center gap-2"
             >
               <FiRefreshCw className={`text-sm sm:text-base ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <span className="hidden sm:inline">{t.refresh}</span>
             </button>
             <button
               onClick={handleLogout}
               className="px-4 sm:px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg border-2 border-red-500 hover:border-red-400 transition-all shadow-lg hover:shadow-xl font-semibold text-xs sm:text-sm flex items-center gap-2"
             >
               <FiLogOut className="text-sm sm:text-base" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t.logout}</span>
             </button>
           </div>
         </div>
@@ -299,9 +323,9 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
                 <div className="w-16 h-16 border-4 border-slate-700 border-t-blue-500 rounded-full animate-spin mx-auto"></div>
               </div>
               <p className="text-slate-300 text-lg sm:text-xl font-bold mb-2">
-                Loading orders...
+                {t.loadingOrders}
               </p>
-              <p className="text-slate-500 text-sm">Please wait</p>
+              <p className="text-slate-500 text-sm">{t.pleaseWait}</p>
             </div>
           </div>
         ) : filteredOrders.length === 0 ? (
@@ -313,12 +337,12 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
                 </div>
               </div>
               <p className="text-slate-300 text-xl sm:text-2xl font-bold mb-2">
-                No orders found
+                {t.noOrdersFound}
               </p>
               <p className="text-slate-500 text-sm sm:text-base">
                 {selectedStatus === 'all' 
-                  ? 'No orders at the moment'
-                  : `No ${selectedStatus} orders at the moment`
+                  ? t.noOrdersAtMoment
+                  : (typeof t.noStatusOrders === 'function' ? t.noStatusOrders(t[statusFilterKeys[selectedStatus]] || selectedStatus) : `No ${selectedStatus} orders at the moment`)
                 }
               </p>
             </div>
@@ -337,6 +361,7 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
                   showElapsedTime={true}
                   isCompact={false}
                   onCancel={handleCancelOrder}
+                  language={language}
                 />
               </div>
             ))}

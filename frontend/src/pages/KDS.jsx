@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase, isSupabaseConfigured } from '../lib/supabase'
-import { updateOrderStatus } from '../lib/api'
+import { updateOrderStatus, cancelOrder } from '../lib/api'
 import OrderCard from '../components/OrderCard'
 import ErrorDisplay from '../components/ErrorDisplay'
 import { useAuth } from '../context/AuthContext'
 import { FiRefreshCw, FiFilter, FiClock, FiCoffee, FiZap, FiAlertCircle, FiLogOut, FiGlobe } from 'react-icons/fi'
+import { kdsUiTranslations, statusFilterKeys } from '../lib/kdsUiTranslations'
 
 const KDS = () => {
   const { logout } = useAuth()
@@ -83,7 +84,7 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
   // Filter orders by status
   useEffect(() => {
     if (selectedStatus === 'all') {
-      setFilteredOrders(orders.filter(o => o.status !== 'completed'))
+      setFilteredOrders(orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled'))
     } else {
       setFilteredOrders(orders.filter(o => o.status === selectedStatus))
     }
@@ -139,6 +140,17 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
     }
   }
 
+  // Handle order cancellation
+  const handleCancelOrder = async (orderId, reason) => {
+    try {
+      await cancelOrder(orderId, reason)
+      await fetchOrders()
+    } catch (error) {
+      console.error('Failed to cancel order:', error)
+      throw error
+    }
+  }
+
   // Handle language toggle
   const handleLanguageToggle = () => {
     const newLanguage = language === 'en' ? 'zh' : 'en'
@@ -146,13 +158,15 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
     localStorage.setItem('kds_language', newLanguage)
   }
 
-  // Status filter options
+  const t = kdsUiTranslations[language] || kdsUiTranslations.en
+  // Status filter options (labels from translations)
   const statusFilters = [
-    { value: 'all', label: 'All Active', count: orders.filter(o => o.status !== 'completed').length, color: 'from-purple-500 via-pink-500 to-orange-500' },
-    { value: 'pending', label: 'Pending', count: orders.filter(o => o.status === 'pending').length, color: 'from-red-500 to-rose-500' },
-    { value: 'preparing', label: 'Preparing', count: orders.filter(o => o.status === 'preparing').length, color: 'from-amber-500 to-orange-500' },
-    { value: 'ready', label: 'Ready', count: orders.filter(o => o.status === 'ready').length, color: 'from-green-500 to-emerald-500' },
-    { value: 'completed', label: 'Completed', count: orders.filter(o => o.status === 'completed').length, color: 'from-blue-500 to-cyan-500' }
+    { value: 'all', label: t.allActive, count: orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled').length, color: 'from-purple-500 via-pink-500 to-orange-500' },
+    { value: 'pending', label: t.pending, count: orders.filter(o => o.status === 'pending').length, color: 'from-red-500 to-rose-500' },
+    { value: 'preparing', label: t.preparing, count: orders.filter(o => o.status === 'preparing').length, color: 'from-amber-500 to-orange-500' },
+    { value: 'ready', label: t.ready, count: orders.filter(o => o.status === 'ready').length, color: 'from-green-500 to-emerald-500' },
+    { value: 'completed', label: t.completed, count: orders.filter(o => o.status === 'completed').length, color: 'from-blue-500 to-cyan-500' },
+    { value: 'cancelled', label: t.cancelled, count: orders.filter(o => o.status === 'cancelled').length, color: 'from-gray-500 to-slate-500' }
   ]
 
   return (
@@ -214,23 +228,23 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
               )}
               <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-3 flex-wrap">
                 <span className="text-white">
-                  KITCHEN DISPLAY SYSTEM
+                  {t.kitchenDisplaySystem}
                 </span>
                 <span className="text-xs sm:text-sm font-bold bg-green-500 text-white px-3 py-1 rounded-md border border-green-400 shadow-lg flex items-center gap-1.5">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                   </span>
-                  LIVE
+                  {t.live}
                 </span>
               </h1>
               <p className="text-slate-400 text-xs sm:text-sm mt-1.5 flex items-center gap-2 font-medium flex-wrap">
                 <FiClock className="text-slate-500" />
-                <span>Last updated: <span className="text-white font-semibold">{lastUpdate.toLocaleTimeString()}</span></span>
+                <span>{t.lastUpdated} <span className="text-white font-semibold">{lastUpdate.toLocaleTimeString()}</span></span>
                 {autoRefresh && (
                   <span className="text-xs bg-green-500/10 text-green-400 px-2 py-0.5 rounded border border-green-500/30 flex items-center gap-1">
                     <FiZap className="text-xs" />
-                    Auto-refresh
+                    {t.autoRefresh}
                   </span>
                 )}
               </p>
@@ -245,7 +259,7 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
                   ? 'bg-red-600 text-white border-red-500 hover:bg-red-700' 
                   : 'bg-slate-700 text-slate-200 border-slate-600 hover:bg-slate-600'
               }`}
-              title={language === 'en' ? 'Switch to Chinese' : 'Switch to English'}
+              title={language === 'en' ? t.switchToChinese : t.switchToEnglish}
             >
               <FiGlobe className="text-sm sm:text-base" />
               <span className="hidden sm:inline font-bold">{language === 'en' ? 'EN' : '中文'}</span>
@@ -259,21 +273,21 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
               }`}
             >
               <FiZap className={`text-sm sm:text-base ${autoRefresh ? 'animate-pulse' : ''}`} />
-              <span className="hidden sm:inline">Auto</span>
+              <span className="hidden sm:inline">{t.auto}</span>
             </button>
             <button
               onClick={fetchOrders}
               className="px-4 sm:px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg border-2 border-slate-600 hover:border-slate-500 transition-all shadow-lg hover:shadow-xl font-semibold text-xs sm:text-sm flex items-center gap-2"
             >
               <FiRefreshCw className={`text-sm sm:text-base ${isLoading ? 'animate-spin' : ''}`} />
-              <span className="hidden sm:inline">Refresh</span>
+              <span className="hidden sm:inline">{t.refresh}</span>
             </button>
             <button
               onClick={handleLogout}
               className="px-4 sm:px-5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg border-2 border-red-500 hover:border-red-400 transition-all shadow-lg hover:shadow-xl font-semibold text-xs sm:text-sm flex items-center gap-2"
             >
               <FiLogOut className="text-sm sm:text-base" />
-              <span className="hidden sm:inline">Logout</span>
+              <span className="hidden sm:inline">{t.logout}</span>
             </button>
           </div>
         </div>
@@ -299,7 +313,8 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
               'pending': selectedStatus === filter.value ? 'bg-red-600 border-red-500 text-white shadow-lg shadow-red-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-red-600/20',
               'preparing': selectedStatus === filter.value ? 'bg-amber-600 border-amber-500 text-white shadow-lg shadow-amber-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-amber-600/20',
               'ready': selectedStatus === filter.value ? 'bg-green-600 border-green-500 text-white shadow-lg shadow-green-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-green-600/20',
-              'completed': selectedStatus === filter.value ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-blue-600/20'
+              'completed': selectedStatus === filter.value ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-blue-600/20',
+              'cancelled': selectedStatus === filter.value ? 'bg-gray-600 border-gray-500 text-white shadow-lg shadow-gray-500/30' : 'bg-slate-700 border-slate-600 text-slate-300 hover:bg-gray-600/20'
             }
             const buttonClass = statusColors[filter.value] || statusColors['all']
             
@@ -334,9 +349,9 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
                 <div className="w-16 h-16 border-4 border-slate-700 border-t-amber-500 rounded-full animate-spin mx-auto"></div>
               </div>
               <p className="text-slate-300 text-lg sm:text-xl font-bold mb-2">
-                Loading orders...
+                {t.loadingOrders}
               </p>
-              <p className="text-slate-500 text-sm">Please wait</p>
+              <p className="text-slate-500 text-sm">{t.pleaseWait}</p>
             </div>
           </div>
         ) : filteredOrders.length === 0 ? (
@@ -348,12 +363,12 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
                 </div>
               </div>
               <p className="text-slate-300 text-xl sm:text-2xl font-bold mb-2">
-                No orders found
+                {t.noOrdersFound}
               </p>
               <p className="text-slate-500 text-sm sm:text-base">
                 {selectedStatus === 'all' 
-                  ? 'No active orders at the moment'
-                  : `No ${selectedStatus} orders at the moment`
+                  ? t.noActiveOrders
+                  : (typeof t.noStatusOrders === 'function' ? t.noStatusOrders(t[statusFilterKeys[selectedStatus]] || selectedStatus) : `No ${selectedStatus} orders at the moment`)
                 }
               </p>
             </div>
@@ -369,6 +384,7 @@ VITE_SUPABASE_KEY: ${import.meta.env.VITE_SUPABASE_KEY ? '✓ Set' : '✗ Missin
                 <OrderCard
                   order={order}
                   onStatusUpdate={handleStatusUpdate}
+                  onCancel={handleCancelOrder}
                   isInteractive={true}
                   showElapsedTime={true}
                   isCompact={false}
